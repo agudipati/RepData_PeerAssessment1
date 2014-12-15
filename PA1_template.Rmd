@@ -1,25 +1,133 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Analysis of activity data
+Date: "Sunday, December 14, 2014"
 
 
-## Loading and preprocessing the data
+###Sample data:
+
+Sample data can be downloaded from : https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+
+The variables included in this dataset are:
+
+steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+
+date: The date on which the measurement was taken in YYYY-MM-DD format
+
+interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+Lets load and remove NAs from the data
+
+```{r echo=TRUE}
+activity_data <- read.csv("activity.csv")
+activity_data_rm_na <- activity_data[(!is.na(activity_data$steps)),]
+```
+
+###What is mean total number of steps taken per day?
+
+Lets make a histogram of daily data
+
+```{r echo=TRUE}
+activity_data_processed <-aggregate(activity_data_rm_na$steps, by=list(activity_data_rm_na$date), FUN=sum, na.rm=TRUE)
+hist(activity_data_processed$x)
+```
+
+Lets see the mean and median of steps done eachday
+
+```{r echo=TRUE}
+mean(activity_data_processed$x)
+median(activity_data_processed$x)
+```
+Looks like mean and median are different. This could be because of NAs
+
+###What is the average daily activity pattern?
+
+Let's make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```{r echo=TRUE}
+avg_steps_interval <-aggregate(activity_data_rm_na$steps, by=list(activity_data_rm_na$interval), FUN=mean, na.rm=TRUE)
+with(avg_steps_interval,plot(Group.1,x,type="l",xlab="Interval",ylab="Average steps across all days"))
+```
+
+Now lets see which interval has the maximum number of steps
+
+```{r echo=TRUE}
+avg_steps_interval[which(avg_steps_interval$x==max(avg_steps_interval$x)),1]
+```
+
+###Imputing missing values
+
+It's common to have NAs as part of any sample data. Lets see how many NAs we have:
+
+```{r echo=TRUE}
+NACount<-nrow(activity_data[(is.na(activity_data$steps)),])
+```
+
+There are `r NACount` NAs in the sample dataset. Let's impute the NAs with mean
+
+```{r echo=TRUE, message=FALSE}
+library("Hmisc")
+library("plyr")
+
+impute_activity_data <- activity_data
+impute_activity_data$steps <- impute(activity_data$steps,mean)
+```
+
+Now lets analyze what differences does impute bring. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
+
+```{r echo=TRUE}
+impute_activity_data_aggregate <- aggregate(impute_activity_data$steps, by=list(impute_activity_data$date), FUN=sum, na.rm=TRUE)
+hist(impute_activity_data_aggregate$x,xlab="Total steps")
+mean(impute_activity_data_aggregate$x)
+median(impute_activity_data_aggregate$x)
+```
+
+After imputing NAs with mean, mean and median are same. Originaly they were different. Notice that median didn't change.
+
+###Are there differences in activity patterns between weekdays and weekends?
+
+```{r echo=TRUE}
+impute_activity_data$wday <- as.factor(ifelse(weekdays(as.POSIXct(impute_activity_data$date)) %in% c("Saturday","Sunday"), "Weekend", "Weekday"))
+
+avg_wday_steps<-aggregate(impute_activity_data$steps, by=list(Date=impute_activity_data$interval,impute_activity_data$wday),FUN=mean)
+avg_wday_steps$x<-as.numeric(avg_wday_steps$x)
+
+
+xyplot(x~Date|Group.2, data=avg_wday_steps,layout=c(1,2),type="l", xlab="interval",ylab="Number of steps")
+```
+```{r echo=TRUE}
+```
+```{r echo=TRUE}
+```
+```{r echo=TRUE}
+```
 
 
 
-## What is mean total number of steps taken per day?
 
 
 
-## What is the average daily activity pattern?
 
 
 
-## Imputing missing values
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
